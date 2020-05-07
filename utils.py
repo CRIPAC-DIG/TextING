@@ -69,7 +69,7 @@ def load_data(dataset_str):
         train_adj.append(adj)
         train_embed.append(embed)
 
-    for i in range(len(y), train_size):
+    for i in range(len(y), len(ally)): #train_size):
         adj = allx_adj[i].toarray()
         embed = np.array(allx_embed[i])
         val_adj.append(adj)

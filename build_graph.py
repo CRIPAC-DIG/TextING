@@ -17,7 +17,7 @@ from scipy.spatial.distance import cosine
 if len(sys.argv) < 2:
 	sys.exit("Use: python build_graph.py <dataset>")
 
-datasets = ['mr', 'ohsumed', 'R8', 'R52', '20ng']
+datasets = ['mr', 'ohsumed', 'R8', 'R52', '20ng', 'ag_news']
 # build corpus
 dataset = sys.argv[1]
 
@@ -127,7 +127,7 @@ word_doc_list = {}
 oov = {}
 for v in vocab:
     if v not in oov:
-        oov[v] = list(np.random.uniform(-0.25,0.25,300))
+        oov[v] = list(np.random.uniform(-0.01,0.01,300))
 
 for i in range(len(shuffle_doc_words_list)):
     doc_words = shuffle_doc_words_list[i]
@@ -173,8 +173,8 @@ f.write(label_list_str)
 f.close()
 
 # select 90% training set
-train_size = len(train_ids)
-val_size = int(0.1 * train_size)
+train_size = int(0.4 * len(train_ids))
+val_size = int(0.5 * train_size)
 real_train_size = train_size - val_size
 test_size = len(test_ids)
 # different training rates
