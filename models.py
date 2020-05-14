@@ -129,9 +129,9 @@ class MLP(Model):
         return tf.nn.softmax(self.outputs)
 
 
-class GCN(Model):
+class GNN(Model):
     def __init__(self, placeholders, input_dim, **kwargs):
-        super(GCN, self).__init__(**kwargs)
+        super(GNN, self).__init__(**kwargs)
 
         self.inputs = placeholders['features']
         self.input_dim = input_dim

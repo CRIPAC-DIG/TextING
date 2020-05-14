@@ -7,12 +7,12 @@ from sklearn import metrics
 import pickle as pkl
 
 from utils import *
-from models import GCN, MLP
+from models import GNN, MLP
 
 # Set random seed
-#seed = 123
-#np.random.seed(seed)
-#tf.set_random_seed(seed)
+# seed = 123
+# np.random.seed(seed)
+# tf.set_random_seed(seed)
 
 # Settings
 flags = tf.app.flags
@@ -22,10 +22,10 @@ flags.DEFINE_string('model', 'gcn', 'Model string.')
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('epochs', 200, 'Number of epochs to train.')
 flags.DEFINE_integer('input_dim', 300, 'Dimension of input')
-flags.DEFINE_integer('hidden1', 32, 'Number of units in hidden layer.') # 32, 64, 96
+flags.DEFINE_integer('hidden1', 64, 'Number of units in hidden layer.') # 32, 64, 96
 flags.DEFINE_float('dropout', 0.5, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 0, 'Weight for L2 loss on embedding matrix.')
-flags.DEFINE_integer('early_stopping', 1000, 'Tolerance for early stopping (# of epochs).')
+flags.DEFINE_integer('early_stopping', 200, 'Tolerance for early stopping (# of epochs).')
 flags.DEFINE_integer('max_degree', 3, 'Maximum Chebyshev polynomial degree.')
 
 # Load data
@@ -34,7 +34,6 @@ train_adj, train_feature, train_y, val_adj, val_feature, val_y, test_adj, test_f
 print('dataset', FLAGS.dataset, 'hidden', FLAGS.hidden1, 'dropout', FLAGS.dropout)
 
 # Some preprocessing
-#features = preprocess_features(features)
 train_adj, train_mask = preprocess_adj(train_adj)
 train_feature = preprocess_features(train_feature)
 val_adj, val_mask = preprocess_adj(val_adj)
@@ -47,11 +46,11 @@ if FLAGS.model == 'gcn':
     #support = [preprocess_adj(adj)]
     #num_supports = len(support)
     num_supports = 1
-    model_func = GCN
+    model_func = GNN
 elif FLAGS.model == 'gcn_cheby':
     #support = chebyshev_polynomials(adj, FLAGS.max_degree)
     num_supports = 1 + FLAGS.max_degree
-    model_func = GCN
+    model_func = GNN
 elif FLAGS.model == 'dense':
     #support = [preprocess_adj(adj)]  # Not used
     num_supports = 1
@@ -103,6 +102,7 @@ best_cost = 0
 test_doc_embeddings = None
 preds = None
 labels = None
+
 print('train start...')
 # Train model
 for epoch in range(FLAGS.epochs):
@@ -118,13 +118,13 @@ for epoch in range(FLAGS.epochs):
     cost, acc, duration, _, _, _ = evaluate(val_feature, val_adj, val_mask, val_y, placeholders)
     cost_val.append(cost)
     
-    test_cost, test_acc, test_duration, embeddings, p, labels = evaluate(test_feature, test_adj, test_mask, test_y, placeholders)
+    test_cost, test_acc, test_duration, embeddings, pred, labels = evaluate(test_feature, test_adj, test_mask, test_y, placeholders)
     if test_acc>best_acc:
         best_acc = test_acc
         best_epoch = epoch
         best_cost = test_cost
         test_doc_embeddings = embeddings
-        preds = p
+        preds = pred
 
     # Print results
     print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(outs[1]),
