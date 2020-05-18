@@ -5,6 +5,7 @@ import scipy.sparse as sp
 from scipy.sparse.linalg.eigen.arpack import eigsh
 import sys
 import random
+from tqdm import tqdm
 # import sparse
 
 
@@ -27,16 +28,13 @@ def load_data(dataset_str):
     """
     Loads input data from gcn/data directory
 
-    ind.dataset_str.x => the feature vectors of the training instances as scipy.sparse.csr.csr_matrix object;
-    ind.dataset_str.tx => the feature vectors of the test instances as scipy.sparse.csr.csr_matrix object;
-    ind.dataset_str.allx => the feature vectors of both labeled and unlabeled training instances
-        (a superset of ind.dataset_str.x) as scipy.sparse.csr.csr_matrix object;
+    ind.dataset_str.x => the feature vectors and adjacency matrix of the training instances as list;
+    ind.dataset_str.tx => the feature vectors and adjacency matrix of the test instances as list;
+    ind.dataset_str.allx => the feature vectors and adjacency matrix of both labeled and unlabeled training instances
+        (a superset of ind.dataset_str.x) as list;
     ind.dataset_str.y => the one-hot labels of the labeled training instances as numpy.ndarray object;
     ind.dataset_str.ty => the one-hot labels of the test instances as numpy.ndarray object;
     ind.dataset_str.ally => the labels for instances in ind.dataset_str.allx as numpy.ndarray object;
-    ind.dataset_str.graph => a dict in the format {index: [index_of_neighbor_nodes]} as collections.defaultdict
-        object;
-    ind.dataset_str.test.index => the indices of test instances in graph, for the inductive setting as list object.
 
     All objects above must be saved using python pickle module.
 
@@ -53,8 +51,8 @@ def load_data(dataset_str):
                 objects.append(pkl.load(f))
 
     x_adj, x_embed, y, tx_adj, tx_embed, ty, allx_adj, allx_embed, ally = tuple(objects)
-    train_idx_ori = parse_index_file("data/{}.train.index".format(dataset_str))
-    train_size = len(train_idx_ori)
+    # train_idx_ori = parse_index_file("data/{}.train.index".format(dataset_str))
+    # train_size = len(train_idx_ori)
 
     train_adj = []
     train_embed = []
@@ -88,7 +86,7 @@ def load_data(dataset_str):
     val_embed = np.array(val_embed)
     test_embed = np.array(test_embed)
     train_y = np.array(y)
-    val_y = np.array(ally[len(y):train_size])
+    val_y = np.array(ally[len(y):len(ally)])
     test_y = np.array(ty)
 
     return train_adj, train_embed, train_y, val_adj, val_embed, val_y, test_adj, test_embed, test_y
@@ -120,9 +118,7 @@ def preprocess_features(features):
     max_length = max([len(f) for f in features])
     sp_embed = None
     
-    for i in range(features.shape[0]):
-        if i%1000 == 0:
-            print(i)
+    for i in tqdm(range(features.shape[0])):
         feature = np.array(features[i])
         pad = max_length-feature.shape[0]
         feature = np.pad(feature, ((0,pad),(0,0)), mode='constant')
@@ -134,7 +130,8 @@ def preprocess_features(features):
 def normalize_adj(adj):
     """Symmetrically normalize adjacency matrix."""
     rowsum = np.array(adj.sum(1))
-    d_inv_sqrt = np.power(rowsum, -0.5).flatten()
+    with np.errstate(divide='ignore'):
+        d_inv_sqrt = np.power(rowsum, -0.5).flatten()
     d_inv_sqrt[np.isinf(d_inv_sqrt)] = 0.
     d_mat_inv_sqrt = np.diag(d_inv_sqrt)
     return adj.dot(d_mat_inv_sqrt).transpose().dot(d_mat_inv_sqrt)
@@ -145,9 +142,7 @@ def preprocess_adj(adj):
     max_length = max([a.shape[0] for a in adj])
     mask = np.zeros((adj.shape[0], max_length, 1))
     sp_adj = None
-    for i in range(adj.shape[0]):
-        if i%1000 == 0:
-            print(i)
+    for i in tqdm(range(adj.shape[0])):
         adj_normalized = normalize_adj(adj[i])
         pad = max_length-adj_normalized.shape[0]
         adj_normalized = np.pad(adj_normalized, ((0,pad),(0,pad)), mode='constant')

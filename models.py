@@ -111,14 +111,14 @@ class MLP(Model):
 
     def _build(self):
         self.layers.append(Dense(input_dim=self.input_dim,
-                                 output_dim=FLAGS.hidden1,
+                                 output_dim=FLAGS.hidden,
                                  placeholders=self.placeholders,
                                  act=tf.nn.relu,
                                  dropout=True,
                                  sparse_inputs=True,
                                  logging=self.logging))
 
-        self.layers.append(Dense(input_dim=FLAGS.hidden1,
+        self.layers.append(Dense(input_dim=FLAGS.hidden,
                                  output_dim=self.output_dim,
                                  placeholders=self.placeholders,
                                  act=lambda x: x,
@@ -147,8 +147,8 @@ class GNN(Model):
 
     def _loss(self):
         # Weight decay loss
-        #for var in self.layers[0].vars.values():
-        #    self.loss += FLAGS.weight_decay * tf.nn.l2_loss(var)
+        # for var in self.layers[0].vars.values():
+        #     self.loss += FLAGS.weight_decay * tf.nn.l2_loss(var)
 
         for var in tf.trainable_variables():
             if 'weights' in var.name or 'bias' in var.name:
@@ -165,15 +165,15 @@ class GNN(Model):
     def _build(self):
         
         self.layers.append(GraphLayer(input_dim=self.input_dim,
-                                      output_dim=FLAGS.hidden1,
+                                      output_dim=FLAGS.hidden,
                                       placeholders=self.placeholders,
                                       act=tf.tanh,
                                       sparse_inputs=False,
                                       dropout=True,
-                                      steps=2,
+                                      steps=FLAGS.steps,
                                       logging=self.logging))
 
-        self.layers.append(ReadoutLayer(input_dim=FLAGS.hidden1,
+        self.layers.append(ReadoutLayer(input_dim=FLAGS.hidden,
                                         output_dim=self.output_dim,
                                         placeholders=self.placeholders,
                                         act=tf.tanh,

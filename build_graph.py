@@ -13,6 +13,7 @@ from gensim.models import word2vec
 from sklearn.feature_extraction.text import TfidfVectorizer
 import sys
 from scipy.spatial.distance import cosine
+from tqdm import tqdm
 
 if len(sys.argv) < 2:
 	sys.exit("Use: python build_graph.py <dataset>")
@@ -23,6 +24,8 @@ dataset = sys.argv[1]
 
 if dataset not in datasets:
 	sys.exit("wrong dataset name")
+
+print('loading raw data')
 
 word_embeddings_dim = 300
 word_vector_map = {}
@@ -63,11 +66,11 @@ train_ids = []
 for train_name in doc_train_list:
     train_id = doc_name_list.index(train_name)
     train_ids.append(train_id)
-#print('train_ids', train_ids)
+# print('train_ids', train_ids)
 random.shuffle(train_ids)
 
 # partial labeled data
-#train_ids = train_ids[:int(0.2 * len(train_ids))]
+# train_ids = train_ids[:int(0.2 * len(train_ids))]
 
 train_ids_str = '\n'.join(str(index) for index in train_ids)
 f = open('data/' + dataset + '.train.index', 'w')
@@ -78,7 +81,7 @@ test_ids = []
 for test_name in doc_test_list:
     test_id = doc_name_list.index(test_name)
     test_ids.append(test_id)
-#print('test_ids', test_ids)
+# print('test_ids', test_ids)
 random.shuffle(test_ids)
 
 test_ids_str = '\n'.join(str(index) for index in test_ids)
@@ -87,8 +90,8 @@ f.write(test_ids_str)
 f.close()
 
 ids = train_ids + test_ids
-#print('ids', ids)
-#print(len(ids))
+# print('ids', ids)
+# print(len(ids))
 
 shuffle_doc_name_list = []
 shuffle_doc_words_list = []
@@ -173,8 +176,8 @@ f.write(label_list_str)
 f.close()
 
 # select 90% training set
-train_size = int(0.4 * len(train_ids))
-val_size = int(0.5 * train_size)
+train_size = len(train_ids)
+val_size = int(0.1 * train_size)
 real_train_size = train_size - val_size
 test_size = len(test_ids)
 # different training rates
@@ -197,9 +200,9 @@ except:
 x_adj = []
 x_feature = []
 doc_len_list = []
-for i in range(real_train_size):
-    if i%1000 == 0:
-        print(i)
+
+print('building graphs for training')
+for i in tqdm(range(real_train_size)):
     doc_words = shuffle_doc_words_list[i]
     words = doc_words.split()
     doc_len = len(words)
@@ -296,10 +299,10 @@ y = np.array(y)
 
 allx_adj = []
 allx_feature = []
-vd = set()
-for i in range(train_size):
-    if i%1000 == 0:
-        print(i)
+vocab_train = set()
+
+print('building graphs for training + validation')
+for i in tqdm(range(train_size)):
     doc_words = shuffle_doc_words_list[i]
     words = doc_words.split()
     doc_len = len(words)
@@ -307,7 +310,7 @@ for i in range(train_size):
 
     for word in words:
         doc_vocab.add(word)
-        vd.add(word)
+        vocab_train.add(word)
     doc_vocab = list(doc_vocab)
     doc_nodes = len(doc_vocab)
 
@@ -395,10 +398,10 @@ test_size = len(test_ids)
 tx_adj = []
 tx_feature = []
 doc_len_list = []
-dv = set()
-for i in range(test_size):
-    if i%1000 == 0:
-        print(i)
+vocab_test = set()
+
+print('building graphs for test')
+for i in tqdm(range(test_size)):
     doc_words = shuffle_doc_words_list[i + train_size]
     words = doc_words.split()
     doc_len = len(words)
@@ -406,7 +409,7 @@ for i in range(test_size):
 
     for word in words:
         doc_vocab.add(word)
-        dv.add(word)
+        vocab_test.add(word)
     doc_vocab = list(doc_vocab)
     doc_nodes = len(doc_vocab)
     doc_len_list.append(doc_nodes)
@@ -476,7 +479,8 @@ for i in range(test_size):
     tx_adj.append(adj)
     tx_feature.append(features)
 
-print('max',max(doc_len_list),'min',min(doc_len_list),'avg',sum(doc_len_list)/len(doc_len_list))
+print('max_doc_length',max(doc_len_list),'min_doc_length',min(doc_len_list),
+      'average {:.2f}'.format(sum(doc_len_list)/len(doc_len_list)))
 
 ty = []
 for i in range(test_size):
@@ -488,7 +492,8 @@ for i in range(test_size):
     one_hot[label_index] = 1
     ty.append(one_hot)
 ty = np.array(ty)
-print('train',len(vd),'test',len(dv),'inter',len(vd&dv))
+print('training_vocab',len(vocab_train),'test_vocab',len(vocab_test),
+      'intersection',len(vocab_train & vocab_test))
 
 
 # dump objects

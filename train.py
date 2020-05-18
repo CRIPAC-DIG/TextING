@@ -18,45 +18,50 @@ from models import GNN, MLP
 flags = tf.app.flags
 FLAGS = flags.FLAGS
 flags.DEFINE_string('dataset', 'mr', 'Dataset string.')  # 'mr','ohsumed','R8','R52'
-flags.DEFINE_string('model', 'gcn', 'Model string.') 
+flags.DEFINE_string('model', 'gnn', 'Model string.') 
 flags.DEFINE_float('learning_rate', 0.01, 'Initial learning rate.')
 flags.DEFINE_integer('epochs', 200, 'Number of epochs to train.')
+flags.DEFINE_integer('batch_size', 4096, 'Number of batches per epoch.') 
 flags.DEFINE_integer('input_dim', 300, 'Dimension of input')
-flags.DEFINE_integer('hidden1', 64, 'Number of units in hidden layer.') # 32, 64, 96
+flags.DEFINE_integer('hidden', 96, 'Number of units in hidden layer.') # 32, 64, 96, 128
+flags.DEFINE_integer('steps', 2, 'Number of graph layers.')
 flags.DEFINE_float('dropout', 0.5, 'Dropout rate (1 - keep probability).')
 flags.DEFINE_float('weight_decay', 0, 'Weight for L2 loss on embedding matrix.')
-flags.DEFINE_integer('early_stopping', 200, 'Tolerance for early stopping (# of epochs).')
+flags.DEFINE_integer('early_stopping', -1, 'Tolerance for early stopping (# of epochs).')
 flags.DEFINE_integer('max_degree', 3, 'Maximum Chebyshev polynomial degree.')
 
 # Load data
 train_adj, train_feature, train_y, val_adj, val_feature, val_y, test_adj, test_feature, test_y = load_data(FLAGS.dataset)
 
-print('dataset', FLAGS.dataset, 'hidden', FLAGS.hidden1, 'dropout', FLAGS.dropout)
 
 # Some preprocessing
+print('loading training set')
 train_adj, train_mask = preprocess_adj(train_adj)
 train_feature = preprocess_features(train_feature)
+print('loading validation set')
 val_adj, val_mask = preprocess_adj(val_adj)
 val_feature = preprocess_features(val_feature)
+print('loading test set')
 test_adj, test_mask = preprocess_adj(test_adj)
 test_feature = preprocess_features(test_feature)
 
 
-if FLAGS.model == 'gcn':
-    #support = [preprocess_adj(adj)]
-    #num_supports = len(support)
+if FLAGS.model == 'gnn':
+    # support = [preprocess_adj(adj)]
+    # num_supports = len(support)
     num_supports = 1
     model_func = GNN
-elif FLAGS.model == 'gcn_cheby':
-    #support = chebyshev_polynomials(adj, FLAGS.max_degree)
+elif FLAGS.model == 'gcn_cheby': # not used
+    # support = chebyshev_polynomials(adj, FLAGS.max_degree)
     num_supports = 1 + FLAGS.max_degree
     model_func = GNN
-elif FLAGS.model == 'dense':
-    #support = [preprocess_adj(adj)]  # Not used
+elif FLAGS.model == 'dense': # not used
+    # support = [preprocess_adj(adj)]
     num_supports = 1
     model_func = MLP
 else:
     raise ValueError('Invalid argument for model: ' + str(FLAGS.model))
+
 
 # Define placeholders
 placeholders = {
@@ -69,7 +74,7 @@ placeholders = {
 }
 
 
-#label smoothing
+# label smoothing
 # label_smoothing = 0.1
 # num_classes = y_train.shape[1]
 # y_train = (1.0 - label_smoothing) * y_train + label_smoothing / num_classes
@@ -81,8 +86,8 @@ model = model_func(placeholders, input_dim=FLAGS.input_dim, logging=True)
 # Initialize session
 sess = tf.Session()
 
-#merged = tf.summary.merge_all()
-#writer = tf.summary.FileWriter('logs/', sess.graph)
+# merged = tf.summary.merge_all()
+# writer = tf.summary.FileWriter('logs/', sess.graph)
 
 # Define model evaluation function
 def evaluate(features, support, mask, labels, placeholders):
@@ -108,15 +113,27 @@ print('train start...')
 for epoch in range(FLAGS.epochs):
     t = time.time()
     # Construct feed dictionary
-    feed_dict = construct_feed_dict(train_feature, train_adj, train_mask, train_y, placeholders)
-    feed_dict.update({placeholders['dropout']: FLAGS.dropout})
-
+        
     # Training step
-    outs = sess.run([model.opt_op, model.loss, model.accuracy], feed_dict=feed_dict)
+    indices = np.arange(0, len(train_y))
+    np.random.shuffle(indices)
+    
+    train_loss, train_acc = 0, 0
+    for start in range(0, len(train_y), FLAGS.batch_size):
+        end = start + FLAGS.batch_size
+        idx = indices[start:end]
+        feed_dict = construct_feed_dict(train_feature[idx], train_adj[idx], train_mask[idx], train_y[idx], placeholders)
+        feed_dict.update({placeholders['dropout']: FLAGS.dropout})
+
+        outs = sess.run([model.opt_op, model.loss, model.accuracy], feed_dict=feed_dict)
+        train_loss += outs[1]*len(idx)
+        train_acc += outs[2]*len(idx)
+    train_loss /= len(train_y)
+    train_acc /= len(train_y)
 
     # Validation
-    cost, acc, duration, _, _, _ = evaluate(val_feature, val_adj, val_mask, val_y, placeholders)
-    cost_val.append(cost)
+    val_cost, val_acc, val_duration, _, _, _ = evaluate(val_feature, val_adj, val_mask, val_y, placeholders)
+    cost_val.append(val_cost)
     
     test_cost, test_acc, test_duration, embeddings, pred, labels = evaluate(test_feature, test_adj, test_mask, test_y, placeholders)
     if test_acc>best_acc:
@@ -127,11 +144,12 @@ for epoch in range(FLAGS.epochs):
         preds = pred
 
     # Print results
-    print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(outs[1]),
-          "train_acc=", "{:.5f}".format(outs[2]), "val_loss=", "{:.5f}".format(cost),
-          "val_acc=", "{:.5f}".format(acc), "test_acc=", "{:.5f}".format(test_acc), "time=", "{:.5f}".format(time.time() - t),"best_acc=", "{:.5f}".format(best_acc))
+    print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(train_loss),
+          "train_acc=", "{:.5f}".format(train_acc), "val_loss=", "{:.5f}".format(val_cost),
+          "val_acc=", "{:.5f}".format(val_acc), "test_acc=", "{:.5f}".format(test_acc), 
+          "time=", "{:.5f}".format(time.time() - t),"best_acc=", "{:.5f}".format(best_acc))
 
-    if epoch > FLAGS.early_stopping and cost_val[-1] > np.mean(cost_val[-(FLAGS.early_stopping+1):-1]):
+    if FLAGS.early_stopping > 0 and epoch > FLAGS.early_stopping and cost_val[-1] > np.mean(cost_val[-(FLAGS.early_stopping+1):-1]):
         print("Early stopping...")
         break
 

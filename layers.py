@@ -1,4 +1,4 @@
-from  inits import *
+from inits import *
 import tensorflow as tf
 
 flags = tf.app.flags
@@ -52,7 +52,7 @@ def dot(x, y, sparse=False):
 
 def gru_unit(support, x, var, mask, dropout, sparse_inputs=False):
     """GRU unit with 3D tensor inputs."""
-    support = tf.nn.dropout(support, dropout)
+    support = tf.nn.dropout(support, dropout) # optional
     a = tf.matmul(support, x)
         
     z0 = dot(a, var['weights_z0'], sparse_inputs) + var['bias_z0']
