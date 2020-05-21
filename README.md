@@ -28,3 +28,11 @@ Start training and inference as:
 
 To reproduce the result, large hidden size and batch size are suggested as long as your memory allows. We report our result based on 96 hidden size with 1 batch. For the sake of memory efficiency, you may change according to your hardware.
 
+## Citation
+
+@article{zhang2020every,
+  title={Every Document Owns Its Structure: Inductive Text Classification via Graph Neural Networks},
+  author={Zhang, Yufeng and Yu, Xueli and Cui, Zeyu and Wu, Shu and Wen, Zhongzhen and Wang, Liang},
+  journal={arXiv preprint arXiv:2004.13826},
+  year={2020}
+}
