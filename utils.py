@@ -1,6 +1,5 @@
 import numpy as np
 import pickle as pkl
-import networkx as nx
 import scipy.sparse as sp
 from scipy.sparse.linalg.eigen.arpack import eigsh
 import sys
@@ -86,7 +85,7 @@ def load_data(dataset_str):
     val_embed = np.array(val_embed)
     test_embed = np.array(test_embed)
     train_y = np.array(y)
-    val_y = np.array(ally[len(y):len(ally)])
+    val_y = np.array(ally[len(y):len(ally)]) # train_size])
     test_y = np.array(ty)
 
     return train_adj, train_embed, train_y, val_adj, val_embed, val_y, test_adj, test_embed, test_y
@@ -110,17 +109,18 @@ def sparse_to_tuple(sparse_mx):
 
     return sparse_mx
 
+
 def coo_to_tuple(sparse_coo):
     return (sparse_coo.coords.T, sparse_coo.data, sparse_coo.shape)
+
 
 def preprocess_features(features):
     """Row-normalize feature matrix and convert to tuple representation"""
     max_length = max([len(f) for f in features])
-    sp_embed = None
     
     for i in tqdm(range(features.shape[0])):
         feature = np.array(features[i])
-        pad = max_length-feature.shape[0]
+        pad = max_length - feature.shape[0] # padding for each epoch
         feature = np.pad(feature, ((0,pad),(0,0)), mode='constant')
         features[i] = feature
     
@@ -140,11 +140,11 @@ def normalize_adj(adj):
 def preprocess_adj(adj):
     """Preprocessing of adjacency matrix for simple GCN model and conversion to tuple representation."""
     max_length = max([a.shape[0] for a in adj])
-    mask = np.zeros((adj.shape[0], max_length, 1))
-    sp_adj = None
+    mask = np.zeros((adj.shape[0], max_length, 1)) # mask for padding
+
     for i in tqdm(range(adj.shape[0])):
         adj_normalized = normalize_adj(adj[i])
-        pad = max_length-adj_normalized.shape[0]
+        pad = max_length - adj_normalized.shape[0] # padding for each epoch
         adj_normalized = np.pad(adj_normalized, ((0,pad),(0,pad)), mode='constant')
         mask[i,:adj[i].shape[0],:] = 1.
         adj[i] = adj_normalized

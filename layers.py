@@ -60,7 +60,7 @@ def gru_unit(support, x, var, mask, dropout, sparse_inputs=False):
     z = tf.sigmoid(z0 + z1)
     
     r0 = dot(a, var['weights_r0'], sparse_inputs) + var['bias_r0']
-    r1 = dot(a, var['weights_r1'], sparse_inputs) + var['bias_r1']
+    r1 = dot(x, var['weights_r1'], sparse_inputs) + var['bias_r1']
     r = tf.sigmoid(r0 + r1)
     
     h0 = dot(a, var['weights_h0'], sparse_inputs) + var['bias_h0']
