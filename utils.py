@@ -4,6 +4,7 @@ import scipy.sparse as sp
 from scipy.sparse.linalg.eigen.arpack import eigsh
 import sys
 import random
+import re
 from tqdm import tqdm
 # import sparse
 
