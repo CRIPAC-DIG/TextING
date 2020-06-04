@@ -11,11 +11,11 @@ if len(sys.argv) < 2:
 	sys.exit("Use: python build_graph.py <dataset>")
 
 # build corpus
-datasets = ['mr', 'ohsumed', 'R8', 'R52', '20ng', 'ag_news']
+datasets = ['mr', 'ohsumed', 'R8', 'R52', '20ng', 'TREC', 'ag_news', 'WebKB']
 
 dataset = sys.argv[1]
 if dataset not in datasets:
-	sys.exit("wrong dataset name")
+    sys.exit("wrong dataset name")
 
 try:
     window_size = int(sys.argv[2])

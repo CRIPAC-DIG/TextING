@@ -3,14 +3,10 @@ import nltk
 from nltk.corpus import stopwords
 from utils import clean_str, loadWord2Vec
 
-if len(sys.argv) != 2:
+if len(sys.argv) < 2:
     sys.exit("Use: python remove_words.py <dataset>")
 
-datasets = ['20ng', 'R8', 'R52', 'ohsumed', 'mr']
 dataset = sys.argv[1]
-
-if dataset not in datasets:
-    sys.exit("wrong dataset name")
 
 try:
     least_freq = sys.argv[2]
@@ -57,13 +53,11 @@ for doc_content in doc_content_list:
 
 
 clean_corpus_str = '\n'.join(clean_docs)
-
 with open('data/corpus/' + dataset + '.clean.txt', 'w') as f:
     f.write(clean_corpus_str)
 
 
 len_list = []
-
 with open('data/corpus/' + dataset + '.clean.txt', 'r') as f:
     for line in f.readlines():
         if line == '\n':

@@ -112,7 +112,6 @@ print('train start...')
 # Train model
 for epoch in range(FLAGS.epochs):
     t = time.time()
-    # Construct feed dictionary
         
     # Training step
     indices = np.arange(0, len(train_y))
@@ -122,6 +121,7 @@ for epoch in range(FLAGS.epochs):
     for start in range(0, len(train_y), FLAGS.batch_size):
         end = start + FLAGS.batch_size
         idx = indices[start:end]
+        # Construct feed dictionary
         feed_dict = construct_feed_dict(train_feature[idx], train_adj[idx], train_mask[idx], train_y[idx], placeholders)
         feed_dict.update({placeholders['dropout']: FLAGS.dropout})
 
@@ -135,8 +135,9 @@ for epoch in range(FLAGS.epochs):
     val_cost, val_acc, val_duration, _, _, _ = evaluate(val_feature, val_adj, val_mask, val_y, placeholders)
     cost_val.append(val_cost)
     
+    # Test
     test_cost, test_acc, test_duration, embeddings, pred, labels = evaluate(test_feature, test_adj, test_mask, test_y, placeholders)
-    if test_acc>best_acc:
+    if test_acc > best_acc:
         best_acc = test_acc
         best_epoch = epoch
         best_cost = test_cost
@@ -155,7 +156,7 @@ for epoch in range(FLAGS.epochs):
 
 print("Optimization Finished!")
 
-# Testing
+# Best results
 print('Best epoch:', best_epoch)
 print("Test set results:", "cost=", "{:.5f}".format(best_cost),
       "accuracy=", "{:.5f}".format(best_acc))
@@ -168,6 +169,7 @@ print("Micro average Test Precision, Recall and F1-Score...")
 print(metrics.precision_recall_fscore_support(labels, preds, average='micro'))
 
 '''
+# For visualization
 doc_vectors = []
 for i in range(len(test_doc_embeddings)):
     doc_vector = test_doc_embeddings[i]
@@ -175,7 +177,6 @@ for i in range(len(test_doc_embeddings)):
     doc_vectors.append(str(np.argmax(test_y[i])) + ' ' + doc_vector_str)
 
 doc_embeddings_str = '\n'.join(doc_vectors)
-f = open('data/' + FLAGS.dataset + '_doc_vectors.txt', 'w')
-f.write(doc_embeddings_str)
-f.close()
+with open('data/' + FLAGS.dataset + '_doc_vectors.txt', 'w'):
+    f.write(doc_embeddings_str)
 '''

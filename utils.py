@@ -144,7 +144,7 @@ def preprocess_adj(adj):
     mask = np.zeros((adj.shape[0], max_length, 1)) # mask for padding
 
     for i in tqdm(range(adj.shape[0])):
-        adj_normalized = normalize_adj(adj[i])
+        adj_normalized = normalize_adj(adj[i]) # no self-loop
         pad = max_length - adj_normalized.shape[0] # padding for each epoch
         adj_normalized = np.pad(adj_normalized, ((0,pad),(0,pad)), mode='constant')
         mask[i,:adj[i].shape[0],:] = 1.
