@@ -50,22 +50,26 @@ def dot(x, y, sparse=False):
     return res
 
 
-def gru_unit(support, x, var, mask, dropout, sparse_inputs=False):
+def gru_unit(support, x, var, act, mask, dropout, sparse_inputs=False):
     """GRU unit with 3D tensor inputs."""
+    # message passing
     support = tf.nn.dropout(support, dropout) # optional
     a = tf.matmul(support, x)
-        
+
+    # update gate        
     z0 = dot(a, var['weights_z0'], sparse_inputs) + var['bias_z0']
     z1 = dot(x, var['weights_z1'], sparse_inputs) + var['bias_z1'] 
     z = tf.sigmoid(z0 + z1)
     
+    # reset gate
     r0 = dot(a, var['weights_r0'], sparse_inputs) + var['bias_r0']
     r1 = dot(x, var['weights_r1'], sparse_inputs) + var['bias_r1']
     r = tf.sigmoid(r0 + r1)
-    
+
+    # update embeddings    
     h0 = dot(a, var['weights_h0'], sparse_inputs) + var['bias_h0']
     h1 = dot(r*x, var['weights_h1'], sparse_inputs) + var['bias_h1']
-    h = tf.tanh(mask*(h0 + h1))
+    h = act(mask * (h0 + h1))
     
     return h*z + x*(1-z)
 
@@ -224,7 +228,7 @@ class GraphLayer(Layer):
 
         # convolve
         for _ in range(self.steps):
-            output = gru_unit(self.support, output, self.vars, 
+            output = gru_unit(self.support, output, self.vars, self.act,
                               self.mask, 1-self.dropout, self.sparse_inputs)
 
         return output
