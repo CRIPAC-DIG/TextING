@@ -108,6 +108,8 @@ class MLP(Model):
 
     def _accuracy(self):
         self.accuracy = accuracy(self.outputs, self.placeholders['labels'])
+        self.preds = tf.argmax(self.outputs, 1)
+        self.labels = tf.argmax(self.placeholders['labels'], 1)
 
     def _build(self):
         self.layers.append(Dense(input_dim=self.input_dim,
@@ -115,10 +117,10 @@ class MLP(Model):
                                  placeholders=self.placeholders,
                                  act=tf.nn.relu,
                                  dropout=True,
-                                 sparse_inputs=True,
+                                 sparse_inputs=False,
                                  logging=self.logging))
 
-        self.layers.append(Dense(input_dim=FLAGS.hidden,
+        self.layers.append(ReadoutLayer(input_dim=FLAGS.hidden,
                                  output_dim=self.output_dim,
                                  placeholders=self.placeholders,
                                  act=lambda x: x,

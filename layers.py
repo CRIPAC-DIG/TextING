@@ -148,7 +148,7 @@ class Dense(Layer):
         if self.logging:
             self._log_vars()
 
-    def _call(self, inputs, res):
+    def _call(self, inputs):
         x = inputs
 
         # dropout
