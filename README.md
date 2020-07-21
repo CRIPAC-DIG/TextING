@@ -6,8 +6,9 @@ Some functions are based on [Text GCN](https://github.com/yao8839836/text_gcn). 
 
 ## Requirements
 
-* Python 3.6
-* Tensorflow 1.12.0
+* Python 3.6+
+* Tensorflow/Tensorflow-gpu 1.12.0
+* Scipy 1.5.1
 
 ## Usage
 

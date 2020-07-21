@@ -4,7 +4,6 @@ import numpy as np
 import pickle as pkl
 import scipy.sparse as sp
 import sys
-import gensim
 from tqdm import tqdm
 
 
