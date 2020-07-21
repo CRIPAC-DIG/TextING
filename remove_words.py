@@ -1,12 +1,16 @@
 import sys
 import nltk
 from nltk.corpus import stopwords
-from utils import clean_str, loadWord2Vec
+from utils import clean_str, clean_str_sst, loadWord2Vec
 
 if len(sys.argv) < 2:
     sys.exit("Use: python remove_words.py <dataset>")
 
 dataset = sys.argv[1]
+if 'SST' in dataset:
+    func = clean_str_sst
+else:
+    func = clean_str
 
 try:
     least_freq = sys.argv[2]
@@ -29,7 +33,7 @@ with open('data/corpus/' + dataset + '.txt', 'rb') as f:
 word_freq = {}  # to remove rare words
 
 for doc_content in doc_content_list:
-    temp = clean_str(doc_content)
+    temp = func(doc_content)
     words = temp.split()
     for word in words:
         if word in word_freq:
@@ -39,11 +43,11 @@ for doc_content in doc_content_list:
 
 clean_docs = []
 for doc_content in doc_content_list:
-    temp = clean_str(doc_content)
+    temp = func(doc_content)
     words = temp.split()
     doc_words = []
     for word in words:
-        if dataset == 'mr':
+        if dataset == 'mr' or 'SST' in dataset:
             doc_words.append(word)
         elif word not in stop_words and word_freq[word] >= least_freq:
             doc_words.append(word)

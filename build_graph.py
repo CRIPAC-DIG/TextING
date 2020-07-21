@@ -4,14 +4,15 @@ import numpy as np
 import pickle as pkl
 import scipy.sparse as sp
 import sys
+import gensim
 from tqdm import tqdm
 
 
 if len(sys.argv) < 2:
 	sys.exit("Use: python build_graph.py <dataset>")
 
-# build corpus
-datasets = ['mr', 'ohsumed', 'R8', 'R52', '20ng', 'TREC', 'ag_news', 'WebKB']
+# settings
+datasets = ['mr', 'ohsumed', 'R8', 'R52', 'TREC', 'ag_news', 'WebKB', 'SST1', 'SST2']
 
 dataset = sys.argv[1]
 if dataset not in datasets:
@@ -29,6 +30,9 @@ except:
     weighted_graph = False
     print('using default unweighted graph')
 
+truncate = False # whether to truncate long document
+MAX_TRUNC_LEN = 350
+
 
 print('loading raw data')
 
@@ -42,7 +46,7 @@ with open('glove.6B.' + str(word_embeddings_dim) + 'd.txt', 'r') as f:
         word_embeddings[str(data[0])] = list(map(float,data[1:]))
 
 
-# load doc list
+# load document list
 doc_name_list = []
 doc_train_list = []
 doc_test_list = []
@@ -89,7 +93,7 @@ for i in ids:
     shuffle_doc_words_list.append(doc_content_list[int(i)])
 
 
-# build vocab
+# build corpus vocabulary
 word_set = set()
 
 for doc_words in shuffle_doc_words_list:
@@ -135,6 +139,8 @@ def build_graph(start, end):
 
     for i in tqdm(range(start, end)):
         doc_words = shuffle_doc_words_list[i].split()
+        if truncate:
+            doc_words = doc_words[:MAX_TRUNC_LEN]
         doc_len = len(doc_words)
 
         doc_vocab = list(set(doc_words))
@@ -172,7 +178,7 @@ def build_graph(start, end):
                         word_pair_count[word_pair_key] += 1.
                     else:
                         word_pair_count[word_pair_key] = 1.
-                    # two orders
+                    # bi-direction
                     word_pair_key = (word_q_id, word_p_id)
                     if word_pair_key in word_pair_count:
                         word_pair_count[word_pair_key] += 1.

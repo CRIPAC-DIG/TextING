@@ -32,9 +32,9 @@ To reproduce the result, large hidden size and batch size are suggested as long 
 
 ## Citation
 
-    @article{zhang2020every,
+    @inproceedings{zhang2020every,
       title={Every Document Owns Its Structure: Inductive Text Classification via Graph Neural Networks},
       author={Zhang, Yufeng and Yu, Xueli and Cui, Zeyu and Wu, Shu and Wen, Zhongzhen and Wang, Liang},
-      journal={arXiv preprint arXiv:2004.13826},
+      booktitle="Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics",
       year={2020}
     }
