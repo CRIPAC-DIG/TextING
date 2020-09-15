@@ -100,8 +100,9 @@ def evaluate(features, support, mask, labels, placeholders):
 sess.run(tf.global_variables_initializer())
 
 cost_val = []
-best_acc = 0
+best_val = 0
 best_epoch = 0
+best_acc = 0
 best_cost = 0
 test_doc_embeddings = None
 preds = None
@@ -136,9 +137,11 @@ for epoch in range(FLAGS.epochs):
     
     # Test
     test_cost, test_acc, test_duration, embeddings, pred, labels = evaluate(test_feature, test_adj, test_mask, test_y, placeholders)
-    if test_acc > best_acc:
-        best_acc = test_acc
+
+    if val_acc >= best_val:
+        best_val = val_acc
         best_epoch = epoch
+        best_acc = test_acc
         best_cost = test_cost
         test_doc_embeddings = embeddings
         preds = pred
@@ -147,7 +150,7 @@ for epoch in range(FLAGS.epochs):
     print("Epoch:", '%04d' % (epoch + 1), "train_loss=", "{:.5f}".format(train_loss),
           "train_acc=", "{:.5f}".format(train_acc), "val_loss=", "{:.5f}".format(val_cost),
           "val_acc=", "{:.5f}".format(val_acc), "test_acc=", "{:.5f}".format(test_acc), 
-          "time=", "{:.5f}".format(time.time() - t),"best_acc=", "{:.5f}".format(best_acc))
+          "time=", "{:.5f}".format(time.time() - t))
 
     if FLAGS.early_stopping > 0 and epoch > FLAGS.early_stopping and cost_val[-1] > np.mean(cost_val[-(FLAGS.early_stopping+1):-1]):
         print("Early stopping...")
