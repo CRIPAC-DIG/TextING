@@ -60,9 +60,6 @@ Please cite our paper if you use the code:
 }
 ```
 
-## Contact information
-
-
 ## Acknowledge
 
 Some functions are based on [Text GCN](https://github.com/yao8839836/text_gcn). Thank for their work.
